@@ -1,505 +1,115 @@
-# Behavioral Robustness of Small Language Models for Smishing Detection
-
-This repository contains the reproducible pipeline for evaluating six instruction-tuned small language models on SMS smishing detection under textual perturbations and prompt-configuration changes.
-
-The study evaluates three observable dimensions:
-
-1. **Prediction robustness** — changes in predicted labels under character-, word-, sentence-, and multi-level perturbations.
-2. **Prompt-configuration sensitivity** — variation across four prompt configurations formed by neutral/expert framing and label-only/explanation-required output.
-3. **Explanation stability and compliance** — similarity between non-empty rationales generated for clean and perturbed messages, conditioned on both predictions being correct.
-
-The central analysis separates three distinct outcomes:
-
-- overall output change,
-- smishing-to-ham attack success rate (ASR),
-- ham-to-smishing conditional benign-flip rate.
-
-This separation is important because low evasion can coexist with severe instability on legitimate messages.
-
----
-
-## Repository layout
-
-```text
-smishing_behavioral_robustness/
-├── README.md
-├── LICENSE
-├── requirements.txt
-├── environment.yml
-├── .gitignore
-├── configs/
-│   ├── experiment.yaml
-│   ├── models.yaml
-│   └── prompts.yaml
-├── data/
-│   ├── raw/
-│   ├── interim/
-│   ├── processed/
-│   └── manual_audit/
-├── scripts/
-│   ├── 01_prepare_data/
-│   │   ├── build_balanced_corpus.py
-│   │   └── validate_corpus.py
-│   ├── 02_generate_perturbations/
-│   │   ├── perturbations.py
-│   │   ├── run_perturbations.py
-│   │   ├── validate_perturbations.py
-│   │   └── deduplicate_sentence_variants.py
-│   ├── 03_run_inference/
-│   │   ├── run_inference_batched.py
-│   │   ├── rerun_explanation_prompts.py
-│   │   └── parse_model_outputs.py
-│   ├── 04_postprocess/
-│   │   ├── combine_predictions.py
-│   │   ├── normalize_template_names.py
-│   │   ├── dedup_sentence_predictions.py
-│   │   └── integrity_checks.py
-│   ├── 05_analyze_prediction/
-│   │   ├── bootstrap_analysis.py
-│   │   ├── transition_analysis.py
-│   │   └── clean_accuracy.py
-│   ├── 06_analyze_prompt/
-│   │   └── prompt_agreement.py
-│   ├── 07_analyze_explanations/
-│   │   ├── analyze_explanation_stability.py
-│   │   ├── validate_nli_metric.py
-│   │   └── rationale_compliance.py
-│   └── 08_make_tables_figures/
-│       ├── make_tables.py
-│       ├── plot_asr_vs_benign_flip.py
-│       └── plot_attack_profiles.py
-├── slurm/
-│   ├── 01_perturbations.slurm
-│   ├── 02_inference.slurm
-│   ├── 03_explanation_inference.slurm
-│   ├── 04_bootstrap.slurm
-│   └── 05_explanation_stability.slurm
-├── outputs/
-│   ├── perturbations/
-│   ├── predictions/
-│   ├── analysis/
-│   │   ├── prediction/
-│   │   ├── prompt/
-│   │   └── explanations/
-│   ├── tables/
-│   └── figures/
-├── tests/
-│   ├── test_perturbations.py
-│   ├── test_deduplication.py
-│   ├── test_bootstrap_metrics.py
-│   └── test_explanation_filtering.py
-└── docs/
-    ├── DATA_CARD.md
-    ├── MODEL_CARD.md
-    ├── REPRODUCIBILITY.md
-    └── MANUAL_AUDIT_PROTOCOL.md
-```
-
----
-
-## Data flow
-
-### 1. Build the evaluated corpus
+# SMSPsych
 
-The source corpus contains:
+**Psychological technique and factor extraction from SMS messages**
 
-- 1,055 smishing messages from Smishtank,
-- 1,055 ham messages sampled from the Mendeley SMS dataset.
+SMSPsych is the research artifact for a study of psychological manipulation in smishing and benign SMS messages. The project examines how compact language models identify psychological techniques and psychological factors and how the extracted labels can support deterministic explanations.
 
-Three ham messages produced no valid perturbation under any attack/seed and are excluded from the evaluated set. The final evaluated corpus therefore contains:
+## Project scope
 
-- 1,055 smishing,
-- 1,052 ham,
-- **2,107 total messages**.
+SMSPsych focuses on two complementary dimensions of message-level manipulation.
 
-Expected clean prediction rows per model:
+- **Psychological techniques (PTs)** describe how a sender constructs or delivers a persuasive or deceptive message.
+- **Psychological factors (PFs)** describe what psychological mechanism the message attempts to activate in a recipient.
 
-```text
-2,107 messages × 4 prompt configurations = 8,428 rows
-```
+The current study evaluates PT and PF extraction. It does not evaluate binary smishing detection. Message class is provided as a known input rather than predicted by the extractor.
 
-Run:
+## Research questions
 
-```bash
-python scripts/01_prepare_data/build_balanced_corpus.py \
-  --smishing data/raw/smishtank.csv \
-  --ham data/raw/mendeley_sms.csv \
-  --output data/interim/balanced_source.csv
+1. How are PTs and PFs distributed across annotated smishing and benign SMS messages?
+2. How accurately can compact language models extract PTs and PFs, and how does fine-tuning affect performance?
+3. How frequently do the evaluated models produce fully reference-supported label sets for deterministic explanations?
 
-python scripts/01_prepare_data/validate_corpus.py \
-  --input data/interim/balanced_source.csv
-```
+## Dataset
 
----
+The study uses a balanced corpus of 2,110 English SMS messages.
 
-### 2. Generate perturbations
+| Message class | Messages |
+| --- | ---: |
+| Smishing | 1,055 |
+| Benign | 1,055 |
+| **Total** | **2,110** |
 
-Four perturbation classes are used:
+The annotation taxonomy contains 16 PTs and 46 PFs. Fifty-one labels occur in the annotated corpus. The reported per-label evaluation covers 25 labels with at least 30 occurrences, which include 14 PTs and 11 PFs.
 
-- **Character:** homoglyphs, intra-word spacing, and misspellings.
-- **Word:** synonym substitution using counter-fitted embeddings.
-- **Sentence:** deterministic PEGASUS beam-search paraphrasing.
-- **Multi-level:** a sequential chain of word, character, and sentence transformations.
+The primary evaluation uses a fixed test set of 396 messages with 198 messages from each class. The remaining 1,714 messages form the development pool. A separate five-fold cross-validation analysis is conducted for the encoder.
 
-For character and word attacks, approximately 30% of eligible tokens are selected without replacement. A token is eligible when it:
+## Reference annotation
 
-- is not a masked URL or structured placeholder,
-- contains at least two alphabetic characters.
+Three language models independently propose candidate labels for each message. A human reviewer examines the message, proposed labels, and taxonomy definitions before finalizing the reference annotation. The review follows a mechanism-only principle. A label is retained only when the message provides evidence for the corresponding mechanism.
 
-The selected count is rounded to the nearest integer with a minimum of one token.
+## Evaluated approaches
 
-Three seeds are used for character, word, and multi-level attacks. Sentence-level decoding is deterministic, so only one distinct paraphrase is retained per source message.
+SMSPsych compares 11 model configurations.
 
-A semantic-similarity gate retains only variants with:
+### Zero-shot models
 
-```text
-cosine(original, perturbed) ≥ 0.65
-```
+- Gemma 4 E4B
+- Qwen3.5 9B
+- Qwen3.5 4B
+- Llama 3.1 8B Instruct
+- Phi 3 Mini
 
-using `sentence-transformers/all-MiniLM-L6-v2`.
+### Fine-tuned models
 
-Run:
+- LoRA-adapted versions of the five generative models
+- A 110M-parameter `bert-base-uncased` multilabel encoder
 
-```bash
-python scripts/02_generate_perturbations/run_perturbations.py \
-  --input data/processed/evaluated_corpus.csv \
-  --output outputs/perturbations/all_variants.jsonl \
-  --counter-fitted data/raw/counter-fitted-vectors.txt \
-  --frac 0.30 \
-  --seeds 0 1 2 \
-  --sim-threshold 0.65 \
-  --attacks character word sentence multi \
-  --device cuda
-```
+These configurations support a comparison of zero-shot prompting, parameter-efficient adaptation, and encoder-based fine-tuning.
 
-Validate:
+## Explanation pipeline
 
-```bash
-python scripts/02_generate_perturbations/validate_perturbations.py \
-  --input outputs/perturbations/all_variants.jsonl
-```
+SMSPsych uses deterministic explanation assembly rather than free-form explanation generation. Each taxonomy label maps to a fixed clause. The system combines only the clauses associated with the extracted labels.
 
-Deduplicate deterministic sentence-level rows:
+This design prevents the explanation module from introducing labels or psychological mechanisms that the extractor did not return. It does not correct extraction errors. An incorrect extracted label will still produce its corresponding clause.
 
-```bash
-python scripts/02_generate_perturbations/deduplicate_sentence_variants.py \
-  --input outputs/perturbations/all_variants.jsonl \
-  --output outputs/perturbations/valid_variants_dedup.jsonl
-```
+## Evaluation
 
-Expected valid perturbed variants after deduplication:
+The study reports the following measures.
 
-| Attack | Valid variants |
-|---|---:|
-| Character | 5,339 |
-| Word | 5,611 |
-| Sentence | 1,637 |
-| Multi-level | 2,265 |
-| **Total** | **14,852** |
+- Micro-averaged and macro-averaged precision, recall, and F1
+- Per-label extraction performance
+- Set Prediction Risk (SPR)
+- Empty-Prediction Rate (EPR)
+- Invalid-label rate
 
----
+SPR evaluates whether a complete taxonomy-restricted predicted label set is supported by the reference annotation. Strict SPR requires full reference support. Lower support thresholds are examined through a sensitivity analysis.
 
-### 3. Run model inference
+## Repository contents
 
-Each clean message and valid perturbed variant is evaluated using:
+This repository will provide the materials required to reproduce the SMSPsych study, subject to the redistribution terms of the original data sources.
 
-- six models,
-- four prompt configurations.
+- PT and PF taxonomy definitions
+- Annotation and preprocessing resources
+- Zero-shot inference configurations
+- LoRA training configurations
+- Encoder training and evaluation code
+- Deterministic explanation templates
+- Metric implementation and analysis scripts
+- Reproducibility instructions
 
-The four prompts form a 2×2 design:
+The directory structure and execution commands will be documented as the research artifact is finalized.
 
-| Prompt | Role framing | Output mode |
-|---|---|---|
-| t1 | neutral | label only |
-| t2 | expert | label only |
-| t3 | neutral | explanation required |
-| t4 | expert | explanation required |
+## Responsible use
 
-The required final line is:
-
-```text
-FINAL: smishing
-```
-
-or
-
-```text
-FINAL: ham
-```
-
-Run:
-
-```bash
-python scripts/03_run_inference/run_inference_batched.py \
-  --clean data/processed/evaluated_corpus.csv \
-  --perturbed outputs/perturbations/valid_variants_dedup.jsonl \
-  --models-config configs/models.yaml \
-  --prompts-config configs/prompts.yaml \
-  --output-dir outputs/predictions/by_model
-```
-
-Expected final prediction count:
-
-```text
-(2,107 clean + 14,852 perturbed) × 4 prompts × 6 models
-= 407,016 prediction rows
-```
-
----
-
-### 4. Combine and validate predictions
-
-```bash
-python scripts/04_postprocess/combine_predictions.py \
-  --input-dir outputs/predictions/by_model \
-  --output outputs/predictions/preds_all.jsonl
-
-python scripts/04_postprocess/normalize_template_names.py \
-  --input outputs/predictions/preds_all.jsonl \
-  --output outputs/predictions/preds_normalized.jsonl
-
-python scripts/04_postprocess/dedup_sentence_predictions.py \
-  --input outputs/predictions/preds_normalized.jsonl \
-  --output outputs/predictions/preds_dedup.jsonl
-
-python scripts/04_postprocess/integrity_checks.py \
-  --preds outputs/predictions/preds_dedup.jsonl
-```
-
-Required integrity conditions:
-
-```text
-dup_clean = 0
-dup_pert = 0
-label_conflicts = 0
-missing_clean_cells = 0
-```
-
-The integrity script should terminate with a non-zero exit code if any condition fails.
-
----
-
-### 5. Prediction robustness analysis
-
-The primary analysis uses a message-level cluster bootstrap:
-
-- resampling unit: original message,
-- stratified by true class,
-- 1,000 bootstrap replicates,
-- 95% percentile confidence intervals.
-
-Run once per attack:
-
-```bash
-python scripts/05_analyze_prediction/bootstrap_analysis.py \
-  --preds outputs/predictions/preds_dedup.jsonl \
-  --out-dir outputs/analysis/prediction/character \
-  --B 1000 \
-  --attack character
-```
-
-Repeat with `word`, `sentence`, and `multi`.
-
-Report:
-
-- overall clean accuracy,
-- matched clean and perturbed accuracy,
-- matched ΔAcc,
-- strict label-flip rate,
-- output-change rate,
-- conditional ASR,
-- conditional benign-flip rate,
-- unparsed-output rate.
-
-Conditional denominators:
-
-```text
-ASR:
-clean-correct smishing messages
-
-Benign flip:
-clean-correct ham messages
-```
-
-Message-weighted values are primary. Variant-weighted values may be retained as secondary diagnostics.
-
-Run transition analysis:
-
-```bash
-python scripts/05_analyze_prediction/transition_analysis.py \
-  --preds outputs/predictions/preds_dedup.jsonl \
-  --output-dir outputs/analysis/prediction/transitions
-```
-
----
-
-### 6. Prompt-configuration sensitivity
-
-Compute:
-
-- PAR-majority,
-- PAR-unanimous,
-- pairwise disagreement,
-- results by clean condition and attack class.
-
-```bash
-python scripts/06_analyze_prompt/prompt_agreement.py \
-  --preds outputs/predictions/preds_dedup.jsonl \
-  --output-dir outputs/analysis/prompt
-```
-
-Interpretation:
-
-```text
-1 − PAR-unanimous
-```
-
-is the fraction of inputs for which at least one of the four prompt configurations disagrees.
-
-Do not interpret `1 − PAR-majority` as a disagreement rate.
-
----
-
-### 7. Explanation compliance and stability
-
-Explanation analysis uses only t3 and t4.
-
-A pair is eligible only when:
-
-1. the model predicts the correct label on the clean message,
-2. the model predicts the correct label on the perturbed message,
-3. both outputs contain non-empty rationales.
-
-Empty rationales are excluded and reported as instruction-compliance failures.
-
-Run:
-
-```bash
-python scripts/07_analyze_explanations/analyze_explanation_stability.py \
-  --preds outputs/predictions/explanations_all.jsonl \
-  --out-dir outputs/analysis/explanations/stability \
-  --bertscore \
-  --sentcos \
-  --batch-size 32
-```
-
-Primary metric:
-
-- BERTScore F1.
-
-Secondary metrics:
-
-- sentence-embedding cosine,
-- ROUGE-L,
-- token Jaccard.
-
-Important interpretation:
-
-- these metrics measure similarity,
-- they do not establish faithfulness, factual correctness, grounding, or causal reasoning.
-
-Validate the rejected NLI metric:
-
-```bash
-python scripts/07_analyze_explanations/validate_nli_metric.py \
-  --preds outputs/predictions/explanations_all.jsonl \
-  --messages outputs/perturbations/valid_variants_dedup.jsonl \
-  --output outputs/analysis/explanations/nli_validation.json
-```
-
-The shuffled-message control is retained as a methodological negative result.
-
----
-
-### 8. Generate paper tables and figures
-
-```bash
-python scripts/08_make_tables_figures/make_tables.py \
-  --analysis-root outputs/analysis \
-  --output-dir outputs/tables
-
-python scripts/08_make_tables_figures/plot_asr_vs_benign_flip.py \
-  --input outputs/analysis/prediction/character/bootstrap_summary.json \
-  --output outputs/figures/asr_vs_benign_flip.pdf
-
-python scripts/08_make_tables_figures/plot_attack_profiles.py \
-  --analysis-root outputs/analysis/prediction \
-  --output outputs/figures/attack_profiles.pdf
-```
-
-Recommended main artifacts:
-
-1. clean accuracy table,
-2. ASR and benign-flip table,
-3. prompt-agreement table,
-4. explanation-compliance and stability table,
-5. ASR-versus-benign-flip figure,
-6. attack-profile figure.
-
----
-
-## Reproducibility notes
-
-- Use the exact Hugging Face model revisions recorded in `configs/models.yaml`.
-- Greedy decoding should be used for classification.
-- Record package versions in `environment.yml` and `requirements.txt`.
-- Store large model weights and raw datasets outside Git.
-- Do not commit generated predictions or model caches.
-- Keep older or invalid analyses outside the main output directories.
-- Treat `outputs/predictions/preds_dedup.jsonl` as the authoritative prediction file.
-- Treat the corrected `B=1000` bootstrap outputs as the authoritative prediction-analysis results.
-- Treat the empty-rationale-filtered explanation output as the authoritative explanation analysis.
-
----
-
-## Manual perturbation audit
-
-A manual audit is recommended before publication.
-
-Suggested sample:
-
-- 25 variants per attack,
-- balanced across smishing and ham,
-- 100 variants total.
-
-For each variant, annotate:
-
-- Is the original label preserved?
-- Is the message understandable?
-- Is the payload preserved?
-- Is malicious or benign intent preserved?
-- Does the perturbation introduce new meaning?
-
-See `docs/MANUAL_AUDIT_PROTOCOL.md`.
-
----
-
-## Installation
-
-Using Conda:
-
-```bash
-conda env create -f environment.yml
-conda activate smishing-robustness
-```
-
-Or pip:
-
-```bash
-python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-```
-
----
+SMSPsych is intended for cybersecurity research and education. PF labels represent mechanisms inferred from message content. They do not measure a recipient's actual psychological state, susceptibility, intent, or behavior. The outputs should not be treated as psychological diagnoses or used as the sole basis for security decisions.
 
 ## Citation
 
-Add the final paper citation here after publication.
+If you use SMSPsych, please cite the repository. The citation for the accompanying paper will be added after publication.
 
----
+```bibtex
+@software{smspsych2026,
+  author = {Sanjari Pirmahalleh, Seyed Mohammad},
+  title = {{SMSPsych}},
+  year = {2026},
+  url = {https://github.com/varnicm/SMSPsych}
+}
+```
+
+## Contact
+
+For questions or research collaboration, open an issue in this repository or contact the maintainer through the [GitHub profile](https://github.com/varnicm).
 
 ## License
 
-Code can be released under the MIT License. Dataset redistribution must follow the licenses and terms of the original Smishtank and Mendeley sources.
-
+License information will be added before the complete research artifact is released. Any released data will remain subject to the terms of the original data sources.
