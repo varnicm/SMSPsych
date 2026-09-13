@@ -68,7 +68,7 @@ The study reports the following measures.
 
 - Micro-averaged and macro-averaged precision, recall, and F1
 - Per-label extraction performance
-- Set Prediction Risk (SPR)
+- Safe-Prediction Rate (SPR)
 - Empty-Prediction Rate (EPR)
 - Invalid-label rate
 
