@@ -99,7 +99,7 @@ If you use SMSPsych, please cite the repository. The citation for the accompanyi
 
 ```bibtex
 @software{smspsych2026,
-  author = {Sanjari Pirmahalleh, Seyed Mohammad},
+  author = {Sanjari Pirmahalleh, Seyed Mohammad and Pritom, Mir Mehedi Ahsan},
   title = {{SMSPsych}},
   year = {2026},
   url = {https://github.com/varnicm/SMSPsych}
