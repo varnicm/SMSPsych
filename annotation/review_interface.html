@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PT/PF Annotation Review v2</title>
+<style>
+  :root{
+    --ink:#1a1a1a; --muted:#6b6b6b; --line:#e2e0da; --bg:#faf8f3; --card:#fff;
+    --full:#2e7d4f; --full-bg:#e7f3ec; --full-line:#bcdfca;
+    --part:#b07406; --part-bg:#fbf2dd; --part-line:#ecd6a3;
+    --lone:#9a9a9a; --lone-bg:#f1efe9; --lone-line:#dcd8cf;
+    --accent:#c75b39; --pt:#385a9c; --pf:#7a4a86;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    background:var(--bg);color:var(--ink);font-size:15px;line-height:1.5;display:flex}
+  /* sidebar */
+  aside{width:280px;flex-shrink:0;background:var(--card);border-right:1px solid var(--line);
+    height:100vh;position:sticky;top:0;overflow-y:auto;padding:16px}
+  aside h2{font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin:0 0 10px}
+  .tallywrap{margin-bottom:20px}
+  .tally{display:flex;justify-content:space-between;align-items:center;padding:4px 8px;
+    border-radius:6px;font-size:13px;cursor:default;position:relative}
+  .tally:hover{background:var(--bg)}
+  .tally .nm{display:flex;align-items:center;gap:6px}
+  .tally .dot{width:7px;height:7px;border-radius:2px}
+  .tally .dot.pt{background:var(--pt)} .tally .dot.pf{background:var(--pf)}
+  .tally .ct{font-variant-numeric:tabular-nums;font-weight:650;color:var(--muted)}
+  .tally .ct.has{color:var(--accent)}
+  .help{margin-left:4px;width:14px;height:14px;border-radius:50%;border:1px solid var(--line);
+    color:var(--muted);font-size:10px;display:inline-grid;place-items:center;cursor:help}
+  .tooltip{position:fixed;max-width:280px;background:var(--ink);color:#fff;font-size:12px;
+    line-height:1.45;padding:8px 10px;border-radius:8px;z-index:100;pointer-events:none;
+    opacity:0;transition:opacity .12s;box-shadow:0 4px 16px rgba(0,0,0,.2)}
+  /* main */
+  main{flex:1;min-width:0}
+  header{position:sticky;top:0;background:rgba(250,248,243,.95);backdrop-filter:blur(6px);
+    border-bottom:1px solid var(--line);padding:12px 20px;display:flex;align-items:center;gap:16px;z-index:10;flex-wrap:wrap}
+  header h1{font-size:16px;margin:0;font-weight:650}
+  .progress{font-variant-numeric:tabular-nums;color:var(--muted);font-size:13px}
+  .bar{flex:1;height:6px;background:var(--line);border-radius:3px;overflow:hidden;min-width:100px}
+  .bar>i{display:block;height:100%;background:var(--accent);width:0;transition:width .2s}
+  .wrap{max-width:820px;margin:0 auto;padding:24px 20px 120px}
+  .setup{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:28px}
+  .setup h2{margin:0 0 6px;font-size:18px;text-transform:none;letter-spacing:0;color:var(--ink)}
+  .setup p{color:var(--muted);margin:0 0 18px}
+  .drop{border:1.5px dashed var(--line);border-radius:10px;padding:22px;text-align:center;cursor:pointer;transition:.15s;display:block}
+  .drop:hover{border-color:var(--accent);background:#fff}
+  .drop input{display:none}
+  .filelist{margin:12px 0 0;font-size:13px;color:var(--muted)}
+  .btn{appearance:none;border:1px solid var(--line);background:var(--card);color:var(--ink);
+    padding:8px 16px;border-radius:8px;font-size:14px;cursor:pointer;font-weight:550;transition:.12s}
+  .btn:hover{border-color:var(--ink)}
+  .btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+  .btn:disabled{opacity:.4;cursor:not-allowed}
+  .msgcard{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:22px;margin-bottom:18px}
+  .msgmeta{display:flex;gap:10px;align-items:center;margin-bottom:12px;flex-wrap:wrap}
+  .pill{font-size:11px;font-weight:650;padding:3px 9px;border-radius:20px;text-transform:uppercase}
+  .pill.smish{background:#fdeceb;color:#b3402f}
+  .pill.benign{background:#eaf1ec;color:#2e7d4f}
+  .pill.unknown{background:#eee;color:#777}
+  .msgid{font-size:12px;color:var(--muted)}
+  .msgtext{font-size:16px;line-height:1.55;background:var(--bg);border:1px solid var(--line);
+    border-radius:8px;padding:14px 16px;white-space:pre-wrap;word-break:break-word}
+  .group{margin-top:22px}
+  .group>h3{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);
+    margin:0 0 10px;font-weight:650;display:flex;align-items:center;gap:8px}
+  .kind{display:inline-block;width:8px;height:8px;border-radius:2px}
+  .kind.pt{background:var(--pt)} .kind.pf{background:var(--pf)}
+  .tier{margin:0 0 14px}
+  .tier-label{font-size:11px;color:var(--muted);margin:0 0 6px;font-weight:600}
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{border:1px solid var(--line);background:var(--card);border-radius:8px;padding:7px 11px;
+    cursor:pointer;font-size:13.5px;display:flex;align-items:center;gap:8px;transition:.12s;user-select:none}
+  .chip:hover{border-color:var(--ink)}
+  .chip .lab{font-weight:600}
+  .chip .who{display:flex;gap:3px}
+  .chip .who b{font-size:9px;font-weight:700;width:16px;height:16px;border-radius:4px;display:grid;place-items:center;color:#fff}
+  .chip .check{width:16px;height:16px;border-radius:5px;border:1.5px solid var(--line);display:grid;place-items:center;font-size:11px;color:transparent}
+  .chip.sel .check{color:#fff}
+  .chip.full{border-color:var(--full-line);background:var(--full-bg)}
+  .chip.full.sel .check{background:var(--full);border-color:var(--full)}
+  .chip.part{border-color:var(--part-line);background:var(--part-bg)}
+  .chip.part.sel .check{background:var(--part);border-color:var(--part)}
+  .chip.lone{border-color:var(--lone-line);background:var(--lone-bg)}
+  .chip.lone.sel .check{background:var(--lone);border-color:var(--lone)}
+  .chip .qm{width:14px;height:14px;border-radius:50%;border:1px solid currentColor;color:var(--muted);
+    font-size:9px;display:grid;place-items:center;cursor:help;opacity:.6}
+  .empty{color:var(--muted);font-size:13px;font-style:italic}
+  .addrow{margin-top:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .addrow select{padding:6px 8px;border:1px solid var(--line);border-radius:7px;font-size:13px;background:#fff}
+  nav{position:fixed;bottom:0;left:280px;right:0;background:rgba(255,255,255,.96);backdrop-filter:blur(8px);
+    border-top:1px solid var(--line);padding:12px 20px;display:flex;align-items:center;gap:12px;justify-content:center}
+  nav .spacer{flex:1}
+  .jump{width:64px;padding:7px;border:1px solid var(--line);border-radius:7px;text-align:center}
+  .legend{display:flex;gap:12px;font-size:11px;color:var(--muted);flex-wrap:wrap}
+  .legend span{display:flex;align-items:center;gap:5px}
+  .legend i{width:11px;height:11px;border-radius:3px;display:inline-block}
+</style>
+</head>
+<body>
+<aside id="sidebar" style="display:none">
+  <h2>Techniques (PT)</h2>
+  <div class="tallywrap" id="tally-pt"></div>
+  <h2>Factors (PF)</h2>
+  <div class="tallywrap" id="tally-pf"></div>
+</aside>
+
+<main>
+<header id="hdr" style="display:none">
+  <h1>PT/PF Review</h1>
+  <span class="progress" id="prog">0 / 0</span>
+  <div class="bar"><i id="barfill"></i></div>
+  <div class="legend">
+    <span><i style="background:var(--full)"></i>all</span>
+    <span><i style="background:var(--part)"></i>some</span>
+    <span><i style="background:var(--lone)"></i>lone</span>
+  </div>
+  <button class="btn" id="exportBtn">Export</button>
+</header>
+
+<div class="wrap">
+  <div class="setup" id="setup">
+    <h2>Load model candidate files</h2>
+    <p>Select the per-model JSONL candidate files for the messages to review
+    (e.g. <code>openai_*.jsonl</code>, <code>anthropic_*.jsonl</code>,
+    <code>grok_*.jsonl</code>). Optionally add an answer key and a definitions file.</p>
+    <label class="drop">
+      <input type="file" id="fileInput" multiple accept=".jsonl,.json">
+      <strong>Choose candidate files</strong> or drop here
+    </label>
+    <div class="filelist" id="filelist"></div>
+    <label class="drop" style="margin-top:10px;padding:14px">
+      <input type="file" id="keyInput" accept=".jsonl,.json">
+      <span style="font-size:13px"><strong>Optional:</strong> answer key (id, source)</span>
+    </label>
+    <div class="filelist" id="keyname"></div>
+    <label class="drop" style="margin-top:10px;padding:14px">
+      <input type="file" id="defInput" accept=".json">
+      <span style="font-size:13px"><strong>Optional:</strong> definitions JSON {"pts":{...},"pfs":{...}} (else built-in used)</span>
+    </label>
+    <div class="filelist" id="defname"></div>
+    <div style="margin-top:20px;display:flex;gap:10px">
+      <button class="btn primary" id="startBtn" disabled>Start review</button>
+      <button class="btn" id="resumeBtn" style="display:none">Resume saved progress</button>
+    </div>
+  </div>
+  <div id="reviewArea"></div>
+</div>
+
+<nav id="navbar" style="display:none">
+  <button class="btn" id="prevBtn">← Prev</button>
+  <input class="jump" id="jump" type="number" min="1">
+  <span class="spacer"></span><span class="progress" id="prog2"></span><span class="spacer"></span>
+  <button class="btn primary" id="nextBtn">Next →</button>
+</nav>
+</main>
+
+<div class="tooltip" id="tooltip"></div>
+
+<script>
+const MODEL_COLORS={openai:"#10a37f",anthropic:"#c75b39",gemini:"#4285f4",grok:"#222",meta:"#0866ff"};
+const STORE_KEY="ptpf_review_v2";
+
+// Built-in Longtchi-style definitions (used if no definitions file loaded).
+const DEF_PT={
+ "persuasion":"Influencing the target toward an action through appeals and reasoning.",
+ "pretexting":"Inventing a fabricated scenario or false context to justify the request.",
+ "impersonation":"Pretending to be a trusted person, brand, or authority.",
+ "visual deception":"Mimicking legitimate logos, URLs, or layout to appear authentic.",
+ "incentive and motivator":"Offering a reward or benefit to motivate action.",
+ "urgency":"Pressuring the target to act quickly with little time to think.",
+ "attention grabbing":"Using eye-catching cues to capture attention.",
+ "personalization":"Using personal details to appear relevant and credible.",
+ "contextualization":"Framing the sender as part of the target's group or situation.",
+ "quid pro quo":"Offering something in exchange for an action from the target.",
+ "foot-in-the-door":"Starting with a small request to enable a larger one.",
+ "trusted relationship":"Leveraging an existing trusted relationship or service.",
+ "affection trust":"Building an affectionate or romantic bond to lower defenses.",
+ "decoy effect":"Presenting an unusually attractive option to tempt the target.",
+ "priming":"Using prior exposure to influence a later decision.",
+ "loss aversion":"Threatening loss of something valued if the target does not act."
+};
+const DEF_PF={
+ "trust":"Tendency to trust familiar names, brands, or authorities.",
+ "fear":"Fear of a negative consequence.",
+ "authority":"Deference to an apparent authority figure or institution.",
+ "greed":"Desire for easy gain or reward.",
+ "curiosity":"Desire to find out more.",
+ "liking":"Goodwill toward someone the target likes.",
+ "loneliness":"Feelings of loneliness or wish for connection.",
+ "sympathy":"Sympathy for someone in apparent need.",
+ "scarcity":"Sense that an offer is limited or running out.",
+ "impatience":"Impatience to complete something quickly.",
+ "impulsivity":"Impulse to act without reflection.",
+ "vulnerability":"A position of need or vulnerability.",
+ "reciprocation":"Urge to return a favor.",
+ "social proof":"Pull of what others appear to be doing.",
+ "submissiveness":"Tendency to comply with instructions.",
+ "respect":"Respect that discourages questioning the request.",
+ "agreeableness":"Willingness to be helpful and agreeable.",
+ "empathy":"Empathy for another person.",
+ "consistency":"Desire to act consistently with prior commitments.",
+ "vigilance":"Alertness to threats (often exploited by alarming messages).",
+ "openness":"Openness to new experiences or offers."
+};
+
+let PT_DEF={...DEF_PT}, PF_DEF={...DEF_PF};
+let perModel={}, messages={}, sources={}, ids=[], models=[], selections={}, idx=0;
+let loadedFiles=[];
+const $=s=>document.querySelector(s);
+
+$("#fileInput").addEventListener("change",e=>{
+  loadedFiles=[...e.target.files];
+  $("#filelist").innerHTML=loadedFiles.map(f=>`<div>• ${f.name}</div>`).join("");
+  $("#startBtn").disabled=loadedFiles.length===0;
+});
+$("#keyInput").addEventListener("change",e=>{if(e.target.files[0])$("#keyname").innerHTML=`<div>key: ${e.target.files[0].name}</div>`;});
+$("#defInput").addEventListener("change",e=>{if(e.target.files[0])$("#defname").innerHTML=`<div>defs: ${e.target.files[0].name}</div>`;});
+
+function readFile(f){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=rej;r.readAsText(f);});}
+function parseJsonl(t){return t.split("\n").map(l=>l.trim()).filter(Boolean).map(l=>JSON.parse(l));}
+
+$("#startBtn").addEventListener("click",async()=>{
+  perModel={};messages={};sources={};models=[];
+  for(const f of loadedFiles){
+    const name=f.name.split(/[_.]/)[0].toLowerCase(); models.push(name);
+    const rows=parseJsonl(await readFile(f)); const m={};
+    for(const r of rows){
+      m[r.id]={pts:new Set((r.pts||[]).map(x=>x.toLowerCase())),pfs:new Set((r.pfs||[]).map(x=>x.toLowerCase()))};
+      if(r.message!=null)messages[r.id]=r.message;
+    }
+    perModel[name]=m;
+  }
+  models=[...new Set(models)];
+  const kf=$("#keyInput").files[0];
+  if(kf)for(const r of parseJsonl(await readFile(kf)))sources[r.id]=r.source;
+  const df=$("#defInput").files[0];
+  if(df){try{const d=JSON.parse(await readFile(df));if(d.pts)PT_DEF={...PT_DEF,...lower(d.pts)};if(d.pfs)PF_DEF={...PF_DEF,...lower(d.pfs)};}catch(e){}}
+
+  const set=new Set(); for(const m of Object.values(perModel))Object.keys(m).forEach(i=>set.add(i));
+  ids=[...set].sort();
+  selections={};
+  for(const id of ids){
+    const sel={pts:new Set(),pfs:new Set()};
+    for(const kind of ["pts","pfs"]){
+      const v=tally(id,kind);
+      for(const[lab,who]of Object.entries(v))if(who.length===models.length)sel[kind].add(lab);
+    }
+    selections[id]=sel;
+  }
+  startReview();
+});
+function lower(o){const r={};for(const k in o)r[k.toLowerCase()]=o[k];return r;}
+$("#resumeBtn").addEventListener("click",()=>{loadSaved();startReview();});
+window.addEventListener("DOMContentLoaded",()=>{if(localStorage.getItem(STORE_KEY))$("#resumeBtn").style.display="inline-block";});
+
+function tally(id,kind){const out={};for(const mdl of models){const rec=perModel[mdl][id];if(!rec)continue;for(const lab of rec[kind])(out[lab]=out[lab]||[]).push(mdl);}return out;}
+function tierOf(n){return n===models.length?"full":n>=2?"part":"lone";}
+
+function startReview(){
+  $("#setup").style.display="none";$("#hdr").style.display="flex";
+  $("#navbar").style.display="flex";$("#sidebar").style.display="block";
+  $("#jump").max=ids.length; idx=Math.max(0,Math.min(idx,ids.length-1));
+  render();
+}
+
+function countSelections(){
+  const pt={},pf={};
+  for(const id of ids){
+    for(const l of selections[id].pts)pt[l]=(pt[l]||0)+1;
+    for(const l of selections[id].pfs)pf[l]=(pf[l]||0)+1;
+  }
+  return {pt,pf};
+}
+
+function renderSidebar(){
+  const {pt,pf}=countSelections();
+  const build=(defs,counts,cls)=>Object.keys(defs).sort().map(lab=>{
+    const c=counts[lab]||0;
+    return `<div class="tally">
+      <span class="nm"><span class="dot ${cls}"></span>${lab}
+        <span class="help" data-def="${escapeAttr(defs[lab])}">?</span></span>
+      <span class="ct ${c>0?'has':''}">${c}</span></div>`;
+  }).join("");
+  $("#tally-pt").innerHTML=build(PT_DEF,pt,"pt");
+  $("#tally-pf").innerHTML=build(PF_DEF,pf,"pf");
+  document.querySelectorAll(".help").forEach(h=>{
+    h.addEventListener("mouseenter",ev=>showTip(ev,h.dataset.def));
+    h.addEventListener("mouseleave",hideTip);
+  });
+}
+
+const tip=$("#tooltip");
+function showTip(ev,txt){tip.textContent=txt;tip.style.opacity="1";moveTip(ev);}
+function moveTip(ev){const x=Math.min(ev.clientX+12,window.innerWidth-300);tip.style.left=x+"px";tip.style.top=(ev.clientY+12)+"px";}
+function hideTip(){tip.style.opacity="0";}
+document.addEventListener("mousemove",ev=>{if(tip.style.opacity==="1"&&ev.target.classList.contains("help"))moveTip(ev);});
+
+function render(){
+  const id=ids[idx], src=sources[id]||"unknown";
+  $("#prog").textContent=`${idx+1} / ${ids.length}`;
+  $("#prog2").textContent=`${idx+1} / ${ids.length}`;
+  $("#barfill").style.width=`${(idx+1)/ids.length*100}%`;
+  $("#jump").value=idx+1;
+  const area=$("#reviewArea");area.innerHTML="";
+  const card=document.createElement("div");card.className="msgcard";
+  card.innerHTML=`<div class="msgmeta"><span class="pill ${src}">${src}</span><span class="msgid">${id}</span></div>
+    <div class="msgtext">${escapeHtml(messages[id]||"(no message text)")}</div>`;
+  card.appendChild(buildGroup(id,"pts","Psychological Techniques","pt",PT_DEF));
+  card.appendChild(buildGroup(id,"pfs","Psychological Factors","pf",PF_DEF));
+  area.appendChild(card);
+  renderSidebar();
+  save();
+}
+
+function buildGroup(id,kind,title,cls,defs){
+  const sel=selections[id][kind], votes=tally(id,kind);
+  const g=document.createElement("div");g.className="group";
+  g.innerHTML=`<h3><span class="kind ${cls}"></span>${title}</h3>`;
+  const tiers={full:[],part:[],lone:[]};
+  for(const[lab,who]of Object.entries(votes))tiers[tierOf(who.length)].push([lab,who]);
+  for(const t of["full","part","lone"])tiers[t].sort((a,b)=>b[1].length-a[1].length||a[0].localeCompare(b[0]));
+  const names={full:"All models agree (pre-selected)",part:"Some models — choose to keep",lone:"Single model — choose to keep"};
+  let any=false;
+  for(const t of["full","part","lone"]){
+    if(!tiers[t].length)continue; any=true;
+    const td=document.createElement("div");td.className="tier";
+    td.innerHTML=`<div class="tier-label">${names[t]}</div>`;
+    const chips=document.createElement("div");chips.className="chips";
+    for(const[lab,who]of tiers[t])chips.appendChild(makeChip(id,kind,lab,who,t,defs));
+    td.appendChild(chips);g.appendChild(td);
+  }
+  if(!any){const e=document.createElement("div");e.className="empty";e.textContent="No labels proposed.";g.appendChild(e);}
+  g.appendChild(buildAdd(id,kind,defs));
+  return g;
+}
+
+function makeChip(id,kind,lab,who,tier,defs){
+  const sel=selections[id][kind];
+  const chip=document.createElement("div");
+  chip.className=`chip ${tier}`+(sel.has(lab)?" sel":"");
+  chip.style.color=tier==="full"?"var(--full)":tier==="part"?"var(--part)":"var(--lone)";
+  const badges=who.map(m=>`<b style="background:${MODEL_COLORS[m]||'#888'}" title="${m}">${m[0].toUpperCase()}</b>`).join("");
+  const def=defs[lab];
+  const qm=def?`<span class="qm" data-def="${escapeAttr(def)}">?</span>`:"";
+  chip.innerHTML=`<span class="check">✓</span><span class="lab" style="color:var(--ink)">${lab}</span>${qm}<span class="who">${badges}</span>`;
+  chip.addEventListener("click",e=>{
+    if(e.target.classList.contains("qm"))return;
+    if(sel.has(lab))sel.delete(lab);else sel.add(lab);
+    chip.classList.toggle("sel");renderSidebar();save();
+  });
+  const q=chip.querySelector(".qm");
+  if(q){q.addEventListener("mouseenter",ev=>showTip(ev,q.dataset.def));q.addEventListener("mouseleave",hideTip);}
+  return chip;
+}
+
+function buildAdd(id,kind,defs){
+  const sel=selections[id][kind];
+  const tax=Object.keys(defs).sort();
+  const row=document.createElement("div");row.className="addrow";
+  const s=document.createElement("select");
+  s.innerHTML=`<option value="">+ add ${kind==="pts"?"PT":"PF"}…</option>`+tax.filter(l=>!sel.has(l)).map(l=>`<option>${l}</option>`).join("");
+  s.addEventListener("change",()=>{if(s.value){sel.add(s.value);render();}});
+  row.appendChild(s);
+  const votes=Object.keys(tally(id,kind));
+  for(const lab of sel){
+    if(!votes.includes(lab)){
+      const chip=document.createElement("div");chip.className="chip lone sel";chip.style.color="var(--accent)";
+      chip.innerHTML=`<span class="check" style="background:var(--accent);border-color:var(--accent)">✓</span><span class="lab" style="color:var(--ink)">${lab}</span><span class="who"><b style="background:var(--accent)">+</b></span>`;
+      chip.addEventListener("click",()=>{sel.delete(lab);render();});
+      row.appendChild(chip);
+    }
+  }
+  return row;
+}
+
+function escapeHtml(s){return s.replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));}
+function escapeAttr(s){return s.replace(/"/g,"&quot;").replace(/</g,"&lt;");}
+
+$("#nextBtn").addEventListener("click",()=>{idx=Math.min(idx+1,ids.length-1);render();window.scrollTo(0,0);});
+$("#prevBtn").addEventListener("click",()=>{idx=Math.max(idx-1,0);render();window.scrollTo(0,0);});
+$("#jump").addEventListener("change",e=>{idx=Math.max(0,Math.min((+e.target.value||1)-1,ids.length-1));render();});
+document.addEventListener("keydown",e=>{if(e.target.tagName==="INPUT"||e.target.tagName==="SELECT")return;if(e.key==="ArrowRight")$("#nextBtn").click();if(e.key==="ArrowLeft")$("#prevBtn").click();});
+
+function save(){const d={idx,sel:{}};for(const id of ids)d.sel[id]={pts:[...selections[id].pts],pfs:[...selections[id].pfs]};try{localStorage.setItem(STORE_KEY,JSON.stringify(d));}catch(e){}}
+function loadSaved(){try{const d=JSON.parse(localStorage.getItem(STORE_KEY));if(d&&d.sel){idx=d.idx||0;for(const id in d.sel)if(selections[id]){selections[id].pts=new Set(d.sel[id].pts);selections[id].pfs=new Set(d.sel[id].pfs);}}}catch(e){}}
+
+$("#exportBtn").addEventListener("click",()=>{
+  const lines=ids.map(id=>JSON.stringify({id,message:messages[id]||"",source:sources[id]||"unknown",pts:[...selections[id].pts].sort(),pfs:[...selections[id].pfs].sort()}));
+  const blob=new Blob([lines.join("\n")+"\n"],{type:"application/jsonl"});
+  const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="reviewed.jsonl";a.click();
+});
+</script>
+</body>
+</html>

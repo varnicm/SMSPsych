@@ -1,0 +1,51 @@
+# Social Psychology
+liking: tendency to react positively to those one likes or perceives as similar
+reciprocation: tendency to feel obligated to return a favor
+social proof: tendency to imitate others' behaviors
+consistency: tendency to remain committed to a prior decision, promise, behavior, or task
+authority: tendency to obey experts, superiors, or authoritative figures
+scarcity: tendency to place higher value on items that are limited in availability
+disobedience: willful refusal to follow authority or rules
+respect: esteem for another based on perceived worth, which may prevent questioning their requests
+perceptual contrast: mistaken judgment from comparing two items in sequence, where the first influences perception of the second
+# Personality and Individual Differences (PID)
+openness: active imagination, curiosity, and adventurousness toward new ideas and experiences
+conscientiousness: thoughtfulness, impulse control, and goal-directed self-discipline
+extraversion: degree of sociability, assertiveness, talkativeness, and emotional expressiveness
+agreeableness: kindness, altruism, and other prosocial tendencies
+neuroticism: mood swings, anxiety, and emotional instability
+disorganization: tendency to act without prior planning or to tolerate disorder
+freewheeling: tendency to disregard rules or conventions; disinhibition
+individual indifference: sustained disinterest toward a task, especially regarding security
+negligence: failure to take proper care of a task, leading to security breaches
+trust: tendency to believe in or rely on others
+self-control: ability to regulate decision-making despite strong emotions or desires
+vulnerability: state of needing special care, support, or protection
+impatience: frustration with waiting or with the time required to complete a task
+impulsivity: tendency to act without forethought
+submissiveness: readiness to conform to the authority or will of others
+curiosity: desire to know or learn something
+laziness: unwillingness to expend the effort required to complete a task
+vigilance: watchfulness for potential dangers or anomalies
+# Cognitive
+cognitive miser: reliance on mental shortcuts when making decisions
+expertise: domain knowledge about a particular subject
+overconfidence: excessive confidence in one's own abilities, especially in detecting threats
+absentmindedness: diversion of attention away from the current task
+# Emotion
+greed: intense desire for wealth, power, or material gain
+fear: belief that something painful, dangerous, or threatening may happen
+sympathy: understanding of another's emotional state without necessarily sharing the same feeling
+empathy: personally relating to another's emotional state based on similar past experience
+loneliness: perceived gap between desired and actual social companionship, connection, or intimacy
+hopelessness: feeling of despair, lack of hope, or belief that things cannot be improved
+# Workplace
+workload: amount of work one is responsible for completing
+stress: physical, emotional, or psychological strain on a person
+busyness: state of having too many things to do
+hurry: rushing to complete a task, which reduces adherence to secure practices
+affective commitment: emotional attachment to an organization
+habituation: desensitization to a repeated task or warning over time
+cynicism: negative or distrustful workplace attitude, often linked to grievance or dissatisfaction
+self-efficacy: belief in one's ability to produce an intended result
+subjective norm: belief that important others approve, support, or expect a particular behavior

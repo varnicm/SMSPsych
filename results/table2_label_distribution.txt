@@ -1,0 +1,54 @@
+# 1055 smishing, 1055 benign
+## PT
+pretexting|801|53
+impersonation|656|3
+urgency|515|31
+trusted relationship|485|42
+incentive and motivator|410|15
+attention grabbing|239|35
+affection trust|46|165
+personalization|129|67
+persuasion|106|51
+visual deception|128|0
+contextualization|39|89
+loss aversion|91|1
+decoy effect|76|0
+quid pro quo|27|6
+foot-in-the-door|3|2
+## PF
+trust|804|136
+fear|463|15
+authority|389|12
+greed|372|13
+curiosity|294|46
+liking|34|172
+impulsivity|87|0
+loneliness|34|44
+sympathy|6|58
+scarcity|47|3
+vulnerability|34|2
+impatience|20|9
+hurry|24|3
+reciprocation|17|8
+social proof|18|4
+empathy|1|20
+agreeableness|2|9
+openness|4|7
+respect|2|8
+consistency|2|8
+busyness|1|7
+laziness|6|2
+extraversion|1|6
+submissiveness|3|3
+stress|1|5
+hopelessness|0|4
+conscientiousness|0|4
+neuroticism|0|3
+workload|0|2
+cognitive miser|2|0
+freewheeling|0|1
+vigilance|0|1
+expertise|0|1
+subjective norm|0|1
+self-efficacy|0|1
+disobedience|0|1

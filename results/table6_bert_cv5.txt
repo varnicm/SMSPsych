@@ -1,0 +1,29 @@
+== per-label (>=30) ==
+pretexting & 854 & 0.92 & 0.78 & 0.85 \\
+impersonation & 659 & 0.95 & 0.84 & 0.89 \\
+urgency & 546 & 0.90 & 0.59 & 0.71 \\
+trusted relationship & 527 & 0.85 & 0.66 & 0.74 \\
+incentive and motivator & 425 & 0.94 & 0.65 & 0.77 \\
+attention grabbing & 274 & 0.73 & 0.21 & 0.32 \\
+affection trust & 211 & 0.86 & 0.37 & 0.52 \\
+personalization & 196 & 0.62 & 0.07 & 0.12 \\
+persuasion & 157 & 0.67 & 0.09 & 0.16 \\
+contextualization & 128 & 0.43 & 0.02 & 0.04 \\
+visual deception & 128 & 0.95 & 0.28 & 0.43 \\
+loss aversion & 92 & 0.86 & 0.13 & 0.23 \\
+decoy effect & 76 & 1.00 & 0.03 & 0.05 \\
+quid pro quo & 33 & 0.00 & 0.00 & 0.00 \\
+trust & 940 & 0.93 & 0.76 & 0.83 \\
+fear & 478 & 0.92 & 0.70 & 0.80 \\
+authority & 401 & 0.83 & 0.53 & 0.65 \\
+greed & 385 & 0.95 & 0.69 & 0.80 \\
+curiosity & 340 & 0.76 & 0.39 & 0.51 \\
+liking & 206 & 0.71 & 0.19 & 0.30 \\
+impulsivity & 87 & 1.00 & 0.01 & 0.02 \\
+loneliness & 78 & 0.75 & 0.04 & 0.07 \\
+sympathy & 64 & 1.00 & 0.02 & 0.03 \\
+scarcity & 50 & 0.00 & 0.00 & 0.00 \\
+vulnerability & 36 & 0.00 & 0.00 & 0.00 \\
+Micro  0.899 0.554 0.686
+Macro  0.741 0.322 0.394
+SPR    0.831

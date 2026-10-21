@@ -1,0 +1,37 @@
+\begin{table*}[t]\centering\footnotesize\setlength{\tabcolsep}{4pt}
+\caption{Per-label $F_1$ on smishing messages for all models, over the 25 evaluated labels (support $\ge 30$). $L$=LoRA, $P$=prompted. Best per label in \textbf{bold}.}
+\label{tab:per_label_f1}
+\begin{tabular}{lrccccccccccc}
+\toprule
+Label & Sup & Gem$_P$ & Qw9$_P$ & Qw4$_P$ & Lla$_P$ & Phi$_P$ & Gem$_L$ & Qw4$_L$ & Qw9$_L$ & Lla$_L$ & Phi$_L$ & BERT \\
+\midrule
+\multicolumn{13}{l}{\textit{Techniques (PT)}} \\
+pretexting & 133 & 0.67 & 0.84 & 0.80 & 0.82 & 0.49 & 0.83 & 0.85 & 0.87 & 0.86 & 0.85 & \textbf{0.88} \\
+impersonation & 117 & 0.29 & 0.79 & 0.76 & 0.00 & 0.02 & 0.88 & 0.90 & 0.89 & 0.88 & 0.84 & \textbf{0.91} \\
+urgency & 79 & 0.72 & 0.68 & 0.64 & 0.64 & 0.58 & 0.77 & \textbf{0.80} & 0.77 & 0.79 & 0.77 & 0.71 \\
+incentive and motivator & 74 & 0.79 & 0.87 & 0.78 & 0.72 & 0.76 & 0.93 & \textbf{0.94} & 0.90 & 0.92 & 0.90 & 0.80 \\
+trusted relationship & 57 & 0.47 & 0.26 & 0.00 & 0.03 & 0.53 & 0.61 & 0.62 & 0.65 & 0.59 & 0.60 & \textbf{0.68} \\
+attention grabbing & 38 & 0.50 & 0.39 & 0.33 & 0.33 & 0.36 & 0.59 & 0.60 & 0.60 & \textbf{0.64} & 0.62 & 0.44 \\
+visual deception & 19 & 0.07 & 0.28 & 0.30 & 0.18 & 0.10 & \textbf{0.67} & 0.33 & 0.40 & 0.18 & 0.28 & 0.38 \\
+persuasion & 15 & 0.17 & 0.25 & 0.00 & 0.23 & 0.15 & 0.44 & 0.35 & 0.39 & \textbf{0.46} & 0.40 & 0.29 \\
+decoy effect & 14 & 0.00 & 0.00 & 0.00 & 0.21 & 0.27 & 0.42 & \textbf{0.49} & 0.13 & 0.46 & 0.36 & 0.00 \\
+personalization & 14 & 0.00 & 0.22 & 0.24 & 0.14 & 0.17 & 0.42 & 0.57 & \textbf{0.67} & 0.39 & 0.35 & 0.27 \\
+affection trust & 8 & 0.80 & 0.62 & 0.33 & 0.67 & 0.26 & 0.75 & 0.84 & \textbf{0.89} & 0.71 & 0.60 & 0.50 \\
+contextualization & 5 & 0.00 & 0.00 & 0.00 & 0.00 & 0.04 & 0.25 & 0.36 & 0.33 & \textbf{0.60} & 0.42 & 0.33 \\
+loss aversion & 5 & 0.18 & 0.46 & 0.29 & 0.00 & 0.06 & \textbf{0.57} & 0.25 & 0.53 & 0.32 & 0.40 & 0.20 \\
+quid pro quo & 3 & 0.00 & 0.00 & 0.04 & 0.09 & 0.04 & \textbf{0.57} & 0.40 & 0.33 & 0.40 & 0.00 & 0.00 \\
+\midrule
+\multicolumn{13}{l}{\textit{Factors (PF)}} \\
+trust & 146 & 0.60 & 0.78 & 0.86 & 0.75 & 0.73 & 0.89 & \textbf{0.91} & 0.88 & 0.89 & 0.86 & 0.90 \\
+fear & 80 & 0.76 & 0.68 & 0.70 & 0.60 & 0.30 & 0.85 & \textbf{0.90} & 0.86 & 0.86 & 0.86 & 0.86 \\
+greed & 64 & 0.68 & 0.81 & 0.63 & 0.34 & 0.46 & \textbf{0.89} & 0.88 & 0.88 & 0.88 & 0.83 & 0.84 \\
+authority & 61 & 0.00 & 0.23 & 0.32 & 0.21 & 0.31 & 0.72 & 0.68 & \textbf{0.73} & 0.67 & 0.66 & 0.53 \\
+curiosity & 42 & 0.54 & 0.64 & 0.54 & 0.40 & 0.38 & 0.59 & \textbf{0.73} & 0.71 & 0.69 & 0.69 & 0.63 \\
+loneliness & 8 & \textbf{0.88} & 0.40 & 0.31 & 0.13 & 0.13 & 0.86 & 0.80 & \textbf{0.88} & 0.67 & 0.62 & 0.40 \\
+scarcity & 8 & 0.00 & 0.26 & 0.29 & 0.17 & 0.18 & \textbf{0.88} & 0.77 & 0.80 & 0.77 & 0.50 & 0.22 \\
+impulsivity & 8 & 0.00 & 0.07 & 0.00 & 0.06 & 0.12 & 0.31 & 0.22 & 0.36 & 0.22 & \textbf{0.36} & 0.00 \\
+liking & 6 & 0.29 & 0.21 & 0.29 & 0.10 & 0.05 & \textbf{0.60} & 0.55 & 0.25 & 0.46 & 0.55 & 0.00 \\
+sympathy & 2 & 0.67 & 0.67 & 0.00 & 0.07 & 0.04 & 0.40 & 0.67 & \textbf{1.00} & \textbf{1.00} & 0.80 & 0.00 \\
+vulnerability & 1 & 0.00 & 0.00 & 0.00 & \textbf{0.03} & 0.02 & 0.00 & 0.00 & 0.00 & 0.00 & 0.00 & 0.00 \\
+\midrule
+\bottomrule\end{tabular}\end{table*}
